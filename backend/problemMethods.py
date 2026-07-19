@@ -1,7 +1,13 @@
+from datetime import date
+
 from problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
 from database import problems
 from bson import ObjectId
 from pymongo import ReturnDocument
+
+# Fields where sending an explicit null is a real request ("clear this").
+# For every other field a null is nonsense, so we drop it instead of wiping good data.
+NULLABLE_FIELDS = {"notes", "repeat_on"}
 
 
 def to_object_id(id: str) -> ObjectId | None:
@@ -46,6 +52,10 @@ async def editProblem(id: str, data: LeetcodeEdit) -> LeetcodeRead | None:
         return None
 
     updates = data.model_dump(mode="json", exclude_unset=True)  # only fields the user sent
+    updates = {                               # ...minus nulls that would wipe a field
+        k: v for k, v in updates.items()
+        if v is not None or k in NULLABLE_FIELDS
+    }
     if not updates:                           # nothing to change -> return current state
         return await getProblem(id)
 
@@ -65,3 +75,17 @@ async def deleteProblem(id: str) -> bool:
         return False
     result = await problems.delete_one({"_id": oid})
     return result.deleted_count == 1          # True if something was deleted, else False
+
+
+async def dueToday() -> list[LeetcodeRead]:
+    """The daily feed: everything scheduled for today or overdue from before."""
+    query = {
+        "repeat_on": {
+            "$ne": None,                      # unscheduled problems are not part of the feed
+            "$lte": date.today().isoformat(),
+        }
+    }
+    results: list[LeetcodeRead] = []
+    async for doc in problems.find(query).sort("repeat_on", 1):   # most overdue first
+        results.append(to_read(doc))
+    return results

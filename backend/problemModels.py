@@ -15,7 +15,7 @@ class LeetcodeAdd(BaseModel):
     notes: str | None = Field(default=None, max_length=300)
 
 class LeetcodeEdit(BaseModel):
-    title: str = Field(min_length=1, max_length=200) 
+    title: str | None = Field(default=None, min_length=1, max_length=200)
     difficulty: Difficulty | None = None
     passed: bool | None = None
     repeat_on: date | None = None
