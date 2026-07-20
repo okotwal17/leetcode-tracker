@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import client
+from indexes import ensure_indexes
 from problemRoutes import problemRouter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield                      # startup happens above this line
+    await ensure_indexes()     # startup happens above this line
+    yield
     await client.close()       # shutdown below it
 
 app = FastAPI(title="Leetcode Tracker", version="1.0", lifespan=lifespan)

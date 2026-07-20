@@ -1,6 +1,10 @@
 from datetime import date
 from enum import Enum
-from pydantic import BaseModel, Field
+from typing import Annotated
+
+from pydantic import BaseModel, BeforeValidator, Field
+
+PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class Difficulty(str, Enum):
     easy = "Easy"
@@ -22,7 +26,7 @@ class LeetcodeEdit(BaseModel):
     notes: str | None = Field(default=None, max_length=300)
 
 class LeetcodeRead(BaseModel):
-    id: str 
+    id: PyObjectId = Field(validation_alias="_id")
     title: str = Field(min_length=1, max_length=200)
     difficulty: Difficulty
     repeat_on: date | None = None
