@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure
 
 from database import client
 from indexes import ensure_indexes
-from problemRoutes import problemRouter
+from problems.problemRoutes import problemRouter
 
 logger = logging.getLogger(__name__)
 

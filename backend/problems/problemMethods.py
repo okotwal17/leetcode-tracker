@@ -1,6 +1,6 @@
 from datetime import date
 
-from problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
+from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
 from database import problems
 from bson import ObjectId
 from pymongo import ReturnDocument
