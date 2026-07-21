@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import valid_id
-from problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
-import problemMethods
+from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
+from . import problemMethods
 
 problemRouter = APIRouter(prefix="/problems", tags=["problems"])
 
