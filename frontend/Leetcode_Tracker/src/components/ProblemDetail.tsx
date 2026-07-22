@@ -45,6 +45,7 @@ export default function ProblemDetail({ problem, onClose }: Props) {
       </dl>
 
       {/* Notes: real notes when present, otherwise a faded, centered nudge. */}
+      <p className="notes-label">Notes</p>
       <div className={`notes-box ${problem.notes ? "" : "notes-box--empty"}`}>
         {problem.notes ? (
           <p className="notes-text">{problem.notes}</p>

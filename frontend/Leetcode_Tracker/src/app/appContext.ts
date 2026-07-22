@@ -17,6 +17,10 @@ export interface AppContextValue {
   openDetail: (problem: Problem) => void; // view a problem's card
   openAdd: () => void; // blank "new problem" form
   openEdit: (problem: Problem) => void; // form pre-filled for editing
+
+  // Opens the themed delete confirmation and resolves true/false with the choice,
+  // so callers can `await confirmDelete(name)` exactly like the old window.confirm.
+  confirmDelete: (itemName: string) => Promise<boolean>;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);

@@ -8,12 +8,10 @@ import { ApiError } from "../api/client";
 import type { Problem } from "../types";
 
 export function useDeleteProblem() {
-  const { refresh } = useApp();
+  const { refresh, confirmDelete } = useApp();
 
   return async function remove(problem: Problem): Promise<boolean> {
-    const ok = window.confirm(
-      `Delete "${problem.title}"? This can't be undone.`,
-    );
+    const ok = await confirmDelete(problem.title);
     if (!ok) return false;
 
     try {

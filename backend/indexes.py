@@ -7,6 +7,6 @@ async def ensure_indexes() -> None:
     Safe to run on every boot: create_index is idempotent, so an index that
     already exists is a no-op rather than an error.
     """
-    # dueToday() both filters ($lte) and sorts on repeat_on, so one index
-    # serves both and keeps the sort out of memory.
-    await problems.create_index("repeat_on")
+    # dueToday() filters on passed (equality) + repeat_on (range) and sorts on
+    # repeat_on.
+    await problems.create_index([("passed", 1), ("repeat_on", 1)])
