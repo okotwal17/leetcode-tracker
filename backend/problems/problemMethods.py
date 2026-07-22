@@ -47,13 +47,14 @@ async def deleteProblem(id: str) -> bool:
 
 
 async def dueToday(limit: int = 100) -> list[LeetcodeRead]:
-    """The daily feed: everything scheduled for today or overdue from before."""
+    """The daily feed: still-unsolved problems scheduled for today or overdue."""
     limit = min(limit, 500)                    # ceiling the client cannot exceed
     query = {
+        "passed": False,
         "repeat_on": {
             "$ne": None,
             "$lte": date.today().isoformat(),
-        }
+        },
     }
     cursor = problems.find(query).sort("repeat_on", 1).limit(limit)
     return [LeetcodeRead(**doc) async for doc in cursor]
