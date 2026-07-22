@@ -31,9 +31,17 @@ async def db_unavailable(request: Request, exc: ConnectionFailure):
         content={"detail": "Database temporarily unavailable, please retry."},
     )
 
+# Origins the browser is allowed to call this API from. The Vite dev server can be
+# reached at either host, and the browser treats them as *distinct* origins, so we
+# list both. Add the deployed frontend's URL here when we ship.
+CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
