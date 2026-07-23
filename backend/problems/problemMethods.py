@@ -1,6 +1,6 @@
 from datetime import date
 
-from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
+from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead, ProblemPage
 from database import problems
 from bson import ObjectId
 from pymongo import ReturnDocument
@@ -19,11 +19,26 @@ async def getProblem(id: str) -> LeetcodeRead | None:
     return LeetcodeRead(**doc) if doc else None
 
 
-async def listProblems(limit: int = 200) -> list[LeetcodeRead]:
-    """Lists out all problems"""
-    limit = min(limit, 500)                    # ceiling the client cannot exceed
-    cursor = problems.find({}).limit(limit)
-    return [LeetcodeRead(**doc) async for doc in cursor]
+async def _page(query: dict, limit: int) -> ProblemPage:
+    """Run a keyset query and package it as one ProblemPage."""
+    limit = min(limit, 100)                    # ceiling the client cannot exceed
+    docs = [doc async for doc in problems.find(query).sort("_id", -1).limit(limit + 1)]
+    has_more = len(docs) > limit
+    docs = docs[:limit]                        # drop the peeked "is there more?" row
+    next_cursor = str(docs[-1]["_id"]) if has_more and docs else None
+    return ProblemPage(
+        items=[LeetcodeRead(**doc) for doc in docs],
+        next_cursor=next_cursor,
+        has_more=has_more,
+    )
+
+
+async def listProblems(limit: int = 20, cursor: str | None = None) -> ProblemPage:
+    """One page of the full archive, newest first."""
+    query: dict = {}
+    if cursor:
+        query["_id"] = {"$lt": ObjectId(cursor)}
+    return await _page(query, limit)
 
 
 async def editProblem(id: str, data: LeetcodeEdit) -> LeetcodeRead | None:
@@ -46,15 +61,15 @@ async def deleteProblem(id: str) -> bool:
     return result.deleted_count == 1
 
 
-async def dueToday(limit: int = 100) -> list[LeetcodeRead]:
+async def dueToday(limit: int = 20, cursor: str | None = None) -> ProblemPage:
     """The daily feed: still-unsolved problems scheduled for today or overdue."""
-    limit = min(limit, 500)                    # ceiling the client cannot exceed
-    query = {
+    query: dict = {
         "passed": False,
         "repeat_on": {
             "$ne": None,
             "$lte": date.today().isoformat(),
         },
     }
-    cursor = problems.find(query).sort("repeat_on", 1).limit(limit)
-    return [LeetcodeRead(**doc) async for doc in cursor]
+    if cursor:
+        query["_id"] = {"$lt": ObjectId(cursor)}
+    return await _page(query, limit)

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from dependencies import valid_id
-from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead
+from dependencies import valid_id, valid_cursor
+from .problemModels import LeetcodeAdd, LeetcodeEdit, LeetcodeRead, ProblemPage
 from . import problemMethods
 
 problemRouter = APIRouter(prefix="/problems", tags=["problems"])
@@ -12,14 +12,20 @@ async def create_problem(data: LeetcodeAdd):
     return await problemMethods.addProblem(data)
 
 
-@problemRouter.get("", response_model=list[LeetcodeRead])
-async def list_problems():
-    return await problemMethods.listProblems()
+@problemRouter.get("", response_model=ProblemPage)
+async def list_problems(
+    limit: int = Query(20, ge=1, le=100),
+    cursor: str | None = Depends(valid_cursor),
+):
+    return await problemMethods.listProblems(limit=limit, cursor=cursor)
 
 
-@problemRouter.get("/today", response_model=list[LeetcodeRead])
-async def problems_due_today():
-    return await problemMethods.dueToday()
+@problemRouter.get("/today", response_model=ProblemPage)
+async def problems_due_today(
+    limit: int = Query(20, ge=1, le=100),
+    cursor: str | None = Depends(valid_cursor),
+):
+    return await problemMethods.dueToday(limit=limit, cursor=cursor)
 
 
 @problemRouter.get("/{id}", response_model=LeetcodeRead)

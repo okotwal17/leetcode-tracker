@@ -9,3 +9,10 @@ def valid_id(id: str) -> str:
     if not ObjectId.is_valid(id):
         raise HTTPException(status_code=422, detail="Invalid problem id")
     return id
+
+
+def valid_cursor(cursor: str | None = None) -> str | None:
+    """Validate the optional keyset cursor at the HTTP edge."""
+    if cursor is not None and not ObjectId.is_valid(cursor):
+        raise HTTPException(status_code=422, detail="Invalid cursor")
+    return cursor

@@ -19,10 +19,6 @@ class LeetcodeAdd(BaseModel):
     notes: str | None = Field(default=None, max_length=300)
 
 class LeetcodeEdit(BaseModel):
-    # All fields are OPTIONAL (= default), so any can be omitted in a PATCH.
-    # Only repeat_on and notes are NULLABLE (| None) — sending null there means
-    # "clear this". title/difficulty/passed reject a null with a 422, so a bad
-    # client can't wipe them. This is why editProblem needs no null-filter.
     title: str = Field(default=None, min_length=1, max_length=200)
     difficulty: Difficulty = None
     passed: bool = None
@@ -36,3 +32,8 @@ class LeetcodeRead(BaseModel):
     repeat_on: date | None = None
     passed: bool = False
     notes: str | None = Field(default=None, max_length=300)
+
+class ProblemPage(BaseModel):
+    items: list[LeetcodeRead]
+    next_cursor: str | None = None
+    has_more: bool = False
