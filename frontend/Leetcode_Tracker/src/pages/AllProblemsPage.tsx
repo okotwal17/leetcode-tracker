@@ -7,7 +7,7 @@ import { SearchIcon } from "../components/icons";
 import { useProblems } from "../hooks/useProblems";
 
 export default function AllProblemsPage() {
-  const { status, data, error } = useProblems("all");
+  const { status, data, error, hasMore, loadingMore, loadMore } = useProblems("all");
 
   return (
     <section>
@@ -18,7 +18,8 @@ export default function AllProblemsPage() {
         </div>
         {status === "ready" && data.length > 0 && (
           <span className="count-pill">
-            {data.length} total
+            {data.length}
+            {hasMore ? "+" : ""} loaded
           </span>
         )}
       </div>
@@ -38,6 +39,9 @@ export default function AllProblemsPage() {
         status={status}
         error={error}
         problems={data}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onLoadMore={loadMore}
         emptyTitle="No problems yet"
         emptyHint="Hit Add in the top bar to log your first problem."
       />

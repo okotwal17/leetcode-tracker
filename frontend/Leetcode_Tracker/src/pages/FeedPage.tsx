@@ -5,7 +5,7 @@ import { useProblems } from "../hooks/useProblems";
 import { formatDate, todayISO } from "../utils/date";
 
 export default function FeedPage() {
-  const { status, data, error } = useProblems("today");
+  const { status, data, error, hasMore, loadingMore, loadMore } = useProblems("today");
 
   return (
     <section>
@@ -16,7 +16,8 @@ export default function FeedPage() {
         </div>
         {status === "ready" && data.length > 0 && (
           <span className="count-pill">
-            {data.length} problem{data.length === 1 ? "" : "s"}
+            {data.length}
+            {hasMore ? "+" : ""} problem{data.length === 1 && !hasMore ? "" : "s"}
           </span>
         )}
       </div>
@@ -26,6 +27,9 @@ export default function FeedPage() {
         error={error}
         problems={data}
         showRelativeDue
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onLoadMore={loadMore}
         emptyTitle="You're all caught up 🎉"
         emptyHint="Nothing is scheduled for today. Add a problem or come back tomorrow."
       />

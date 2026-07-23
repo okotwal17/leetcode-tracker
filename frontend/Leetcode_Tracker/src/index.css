@@ -262,6 +262,18 @@ button {
   gap: 10px;
 }
 
+/* Invisible trip-wire the IntersectionObserver watches to trigger the next page. */
+.list-sentinel {
+  height: 1px;
+}
+
+.list-loading-more {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
 .tile {
   display: flex;
   align-items: center;

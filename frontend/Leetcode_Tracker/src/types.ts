@@ -18,6 +18,15 @@ export interface Problem {
   notes: string | null;
 }
 
+// One page of a keyset-paginated list (backend ProblemPage). `items` is just
+// this page's slice; `next_cursor` is the opaque token to request the next page
+// (null at the end); `has_more` says whether another page exists.
+export interface ProblemPage {
+  items: Problem[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
+
 // Payload for creating a problem (LeetcodeAdd).
 export interface ProblemCreate {
   title: string;
