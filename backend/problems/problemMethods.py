@@ -6,16 +6,16 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 
 
-async def addProblem(data: LeetcodeAdd) -> LeetcodeRead:
-    """Adds a new problem"""
-    doc = data.model_dump(mode="json")
+async def addProblem(user_id: ObjectId, data: LeetcodeAdd) -> LeetcodeRead:
+    """Adds a new problem owned by this user"""
+    doc = data.model_dump(mode="json") | {"user_id": user_id}
     await problems.insert_one(doc)
     return LeetcodeRead(**doc)
 
 
-async def getProblem(id: str) -> LeetcodeRead | None:
-    """Gets a specific problem with id"""
-    doc = await problems.find_one({"_id": ObjectId(id)})
+async def getProblem(user_id: ObjectId, id: str) -> LeetcodeRead | None:
+    """Gets one of this user's problems by id"""
+    doc = await problems.find_one({"_id": ObjectId(id), "user_id": user_id})
     return LeetcodeRead(**doc) if doc else None
 
 
@@ -33,37 +33,44 @@ async def _page(query: dict, limit: int) -> ProblemPage:
     )
 
 
-async def listProblems(limit: int = 20, cursor: str | None = None) -> ProblemPage:
-    """One page of the full archive, newest first."""
-    query: dict = {}
+async def listProblems(
+    user_id: ObjectId, limit: int = 20, cursor: str | None = None
+) -> ProblemPage:
+    """One page of this user's archive, newest first."""
+    query: dict = {"user_id": user_id}
     if cursor:
         query["_id"] = {"$lt": ObjectId(cursor)}
     return await _page(query, limit)
 
 
-async def editProblem(id: str, data: LeetcodeEdit) -> LeetcodeRead | None:
-    """Updates a problem in DB"""
+async def editProblem(
+    user_id: ObjectId, id: str, data: LeetcodeEdit
+) -> LeetcodeRead | None:
+    """Updates one of this user's problems in DB"""
     updates = data.model_dump(mode="json", exclude_unset=True)
     if not updates:
-        return await getProblem(id)
+        return await getProblem(user_id, id)
 
     doc = await problems.find_one_and_update(
-        {"_id": ObjectId(id)},
+        {"_id": ObjectId(id), "user_id": user_id},
         {"$set": updates},
         return_document=ReturnDocument.AFTER,
     )
     return LeetcodeRead(**doc) if doc else None
 
 
-async def deleteProblem(id: str) -> bool:
-    """Deletes a problem"""
-    result = await problems.delete_one({"_id": ObjectId(id)})
+async def deleteProblem(user_id: ObjectId, id: str) -> bool:
+    """Deletes one of this user's problems"""
+    result = await problems.delete_one({"_id": ObjectId(id), "user_id": user_id})
     return result.deleted_count == 1
 
 
-async def dueToday(limit: int = 20, cursor: str | None = None) -> ProblemPage:
-    """The daily feed: still-unsolved problems scheduled for today or overdue."""
+async def dueToday(
+    user_id: ObjectId, limit: int = 20, cursor: str | None = None
+) -> ProblemPage:
+    """The daily feed: this user's still-unsolved problems due today or overdue."""
     query: dict = {
+        "user_id": user_id,
         "passed": False,
         "repeat_on": {
             "$ne": None,
