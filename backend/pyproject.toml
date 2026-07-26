@@ -6,5 +6,23 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.139.0",
+    "google-auth[requests]>=2.56.2",
+    "pyjwt>=2.13.0",
     "pymongo>=4.17.0",
+    "python-dotenv>=1.2.2",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# "auto" means async test functions run without needing an @pytest.mark.asyncio
+# decorator on every one.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"

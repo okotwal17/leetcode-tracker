@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymongo.errors import ConnectionFailure
 
+from auth.authRoutes import authRouter
 from database import client
 from indexes import ensure_indexes
 from problems.problemRoutes import problemRouter
@@ -47,4 +48,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(authRouter)
 app.include_router(problemRouter)
