@@ -51,6 +51,13 @@ export const XIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const ResetIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M3 2v6h6" />
+    <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+  </svg>
+);
+
 export const CalendarIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <rect x="3" y="4" width="18" height="18" rx="2" />

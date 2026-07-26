@@ -782,6 +782,24 @@ button {
   color: var(--text-muted);
 }
 
+.field-reset {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -3px 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  transition: background 0.15s, color 0.15s;
+}
+
+.field-reset:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
 .char-count {
   font-weight: 500;
   font-size: 12px;
@@ -885,6 +903,80 @@ button {
 }
 
 /* ============================================================================
+   Auth
+   ========================================================================== */
+.auth-splash {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+.auth-page {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.auth-title {
+  margin: 16px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth-message {
+  width: 100%;
+  margin: 20px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-message--error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.auth-google {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  min-height: 40px;
+}
+
+.user-signout {
+  padding: 7px 12px;
+}
+
+/* ============================================================================
    Small-screen tweaks
    ========================================================================== */
 @media (max-width: 560px) {
@@ -903,5 +995,8 @@ button {
   }
   .page-title {
     font-size: 24px;
+  }
+  .user-signout {
+    display: none;
   }
 }

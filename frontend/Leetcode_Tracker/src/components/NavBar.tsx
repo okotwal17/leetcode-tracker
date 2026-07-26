@@ -1,12 +1,11 @@
-// Top navigation bar: brand on the left, the two page links in the middle, and
-// the Add button (pencil icon) on the right. NavLink gives us the active-page
-// styling for free by setting `aria-current` / an `active` class on the match.
 import { NavLink } from "react-router-dom";
 import { PencilIcon } from "./icons";
 import { useApp } from "../app/appContext";
+import { useAuth } from "../auth/authContext";
 
 export default function NavBar() {
   const { openAdd } = useApp();
+  const { user, logout } = useAuth();
 
   return (
     <header className="nav">
@@ -17,7 +16,7 @@ export default function NavBar() {
         </NavLink>
 
         <nav className="nav-links">
-          {/* `end` so "Feed" is only active on exactly "/", not on "/problems". */}
+          {/* `end` so Feed is only active on exactly "/", not "/problems". */}
           <NavLink to="/" end className="nav-link">
             Feed
           </NavLink>
@@ -30,6 +29,16 @@ export default function NavBar() {
           <PencilIcon />
           <span className="add-btn-label">Add</span>
         </button>
+
+        {user && (
+          <button
+            type="button"
+            className="btn btn--ghost user-signout"
+            onClick={logout}
+          >
+            Sign out
+          </button>
+        )}
       </div>
     </header>
   );

@@ -1,6 +1,12 @@
-// Mirrors the backend's Pydantic models (see backend/problems/problemModels.py).
-// Keeping these in lockstep with the API is what makes the whole app type-safe:
-// every fetch result flows through these shapes.
+// Mirrors the backend's Pydantic models in backend/problems and backend/auth.
+
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  picture: string | null;
+  created_at: string | null;
+}
 
 export type Difficulty = "Easy" | "Medium" | "Hard";
 

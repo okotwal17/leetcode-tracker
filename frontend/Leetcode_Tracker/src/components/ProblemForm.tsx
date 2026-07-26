@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { createProblem, updateProblem } from "../api/problems";
 import { ApiError } from "../api/client";
 import { useApp } from "../app/appContext";
+import { ResetIcon } from "./icons";
 import {
   DIFFICULTIES,
   NOTES_MAX_LENGTH,
@@ -107,15 +108,31 @@ export default function ProblemForm({ problem, onClose }: Props) {
           </select>
         </label>
 
-        <label className="field">
-          <span className="field-label">Next attempt</span>
+        {/* A div, not a label: a <label> forwards clicks to its input, which
+            would reopen the date picker every time you hit Clear. */}
+        <div className="field">
+          <div className="field-label">
+            <label htmlFor="repeat-on">Next attempt</label>
+            {repeatOn && (
+              <button
+                type="button"
+                className="field-reset"
+                onClick={() => setRepeatOn("")}
+                aria-label="Clear date"
+                title="Clear date"
+              >
+                <ResetIcon width={14} height={14} />
+              </button>
+            )}
+          </div>
           <input
+            id="repeat-on"
             className="input"
             type="date"
-            value={repeatOn ?? ""}
+            value={repeatOn}
             onChange={(e) => setRepeatOn(e.target.value)}
           />
-        </label>
+        </div>
       </div>
 
       <label className="toggle">
