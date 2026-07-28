@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import FeedPage from "./pages/FeedPage";
 import AllProblemsPage from "./pages/AllProblemsPage";
+import ClosedProblemsPage from "./pages/ClosedProblemsPage";
 import LoginPage from "./pages/LoginPage";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -31,6 +32,7 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route index element={<FeedPage />} />
                 <Route path="problems" element={<AllProblemsPage />} />
+                <Route path="retired" element={<ClosedProblemsPage />} />
               </Route>
             </Route>
 

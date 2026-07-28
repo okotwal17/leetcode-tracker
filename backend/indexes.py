@@ -1,4 +1,4 @@
-from database import problems, users
+from database import problems, reviews, users
 
 
 async def ensure_indexes() -> None:
@@ -14,13 +14,18 @@ async def ensure_indexes() -> None:
     # both applies the keyset cursor ($lt) and supplies the sort order.
     await problems.create_index([("user_id", 1), ("_id", -1)])
 
-    # dueToday(): ESR order — Equality (user_id, passed), Sort (_id), Range
-    # (repeat_on). Sort before the range field is what keeps the sort in the
-    # index instead of an in-memory sort of the whole match.
+    # dueToday(): ESR order — Equality (user_id, state), Sort (_id), Range
+    # (repeat_on). 
     await problems.create_index(
-        [("user_id", 1), ("passed", 1), ("_id", -1), ("repeat_on", 1)]
+        [("user_id", 1), ("state", 1), ("_id", -1), ("repeat_on", 1)]
     )
+
+    # listClosed() reuses the index above: same equality prefix, same _id sort, and it
+    # simply never touches the repeat_on range.
 
     # One Google account maps to exactly one user. unique=True is the DB-level
     # backstop in case two concurrent logins race past the upsert.
     await users.create_index("google_sub", unique=True)
+
+    # Review history for one problem, newest first — what a per-problem timeline needs.
+    await reviews.create_index([("user_id", 1), ("problem_id", 1), ("_id", -1)])

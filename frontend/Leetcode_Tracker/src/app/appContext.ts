@@ -17,6 +17,7 @@ export interface AppContextValue {
   openDetail: (problem: Problem) => void; // view a problem's card
   openAdd: () => void; // blank "new problem" form
   openEdit: (problem: Problem) => void; // form pre-filled for editing
+  openReview: (problem: Problem) => void; // record an attempt and reschedule it
 
   // Opens the themed delete confirmation and resolves true/false with the choice,
   // so callers can `await confirmDelete(name)` exactly like the old window.confirm.

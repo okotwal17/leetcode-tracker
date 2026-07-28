@@ -30,7 +30,6 @@ export default function ProblemForm({ problem, onClose }: Props) {
     problem?.difficulty ?? "Easy",
   );
   const [repeatOn, setRepeatOn] = useState(problem?.repeat_on ?? "");
-  const [passed, setPassed] = useState(problem?.passed ?? false);
   const [notes, setNotes] = useState(problem?.notes ?? "");
 
   const [submitting, setSubmitting] = useState(false);
@@ -47,11 +46,12 @@ export default function ProblemForm({ problem, onClose }: Props) {
     }
 
     // Empty date / notes become null so the backend stores "unset" rather than "".
+    // `passed` isn't here any more: a review sets it, so sending it from the form
+    // would let the user contradict their own history.
     const payload: ProblemCreate = {
       title: cleanTitle,
       difficulty,
       repeat_on: repeatOn === "" ? null : repeatOn,
-      passed,
       notes: notes.trim() === "" ? null : notes.trim(),
     };
 
@@ -112,7 +112,9 @@ export default function ProblemForm({ problem, onClose }: Props) {
             would reopen the date picker every time you hit Clear. */}
         <div className="field">
           <div className="field-label">
-            <label htmlFor="repeat-on">Next attempt</label>
+            <label htmlFor="repeat-on">
+              {isEdit ? "Override next review" : "First attempt"}
+            </label>
             {repeatOn && (
               <button
                 type="button"
@@ -135,17 +137,12 @@ export default function ProblemForm({ problem, onClose }: Props) {
         </div>
       </div>
 
-      <label className="toggle">
-        <input
-          type="checkbox"
-          checked={passed}
-          onChange={(e) => setPassed(e.target.checked)}
-        />
-        <span className="toggle-track" aria-hidden="true">
-          <span className="toggle-thumb" />
-        </span>
-        <span className="field-label">I passed this problem</span>
-      </label>
+      {isEdit && (
+        <p className="form-hint">
+          Reviews normally set this date for you. Moving it earlier than the schedule
+          also drops the problem a rung, since it means you want it back sooner.
+        </p>
+      )}
 
       <label className="field">
         <span className="field-label">

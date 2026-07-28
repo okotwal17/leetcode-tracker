@@ -7,28 +7,11 @@ and lets the whole algorithm be replaced behind one seam.
 
 import random
 from datetime import date, timedelta
-from enum import Enum, IntEnum
 from typing import NamedTuple
 
-from problems.problemModels import Difficulty
-
-
-class Grade(IntEnum):
-    """How a review went. IntEnum so signals can cap it with min()."""
-
-    AGAIN = 0
-    HARD = 1
-    GOOD = 2
-    EASY = 3
-
-
-class Hint(str, Enum):
-    """How much help the user needed to get there."""
-
-    NONE = "none"
-    NUDGE = "nudge"
-    SOLUTION = "solution"
-
+# Grade and Hint live with the other wire-facing enums rather than here, so that
+# problemModels can build ReviewSubmit out of them without importing this module back.
+from problems.problemModels import Difficulty, Grade, Hint
 
 # Rung n means "come back in RUNG_DAYS[n] days". Stored 0-indexed, shown to the
 # user as 1-6. Rung 5 is terminal.
@@ -79,7 +62,7 @@ class Outcome(NamedTuple):
 
 def grade_from_signals(
     self_rating: Grade,
-    hint: Hint = Hint.NONE,
+    hint: Hint = Hint.none,
     minutes: float | None = None,
     difficulty: Difficulty | None = None,
 ) -> Grade:
@@ -87,16 +70,16 @@ def grade_from_signals(
     # Asymmetric on purpose: users inflate self-ratings and rarely deflate them, so
     # evidence of struggle may veto optimism but evidence of speed may not override
     # a self-reported struggle.
-    cap = Grade.EASY
+    cap = Grade.easy
 
-    if hint is Hint.SOLUTION:
-        cap = Grade.AGAIN  # reading the solution isn't solving it
-    elif hint is Hint.NUDGE:
-        cap = min(cap, Grade.HARD)
+    if hint is Hint.solution:
+        cap = Grade.again  # reading the solution isn't solving it
+    elif hint is Hint.nudge:
+        cap = min(cap, Grade.hard)
 
     if minutes is not None and difficulty is not None:
         if minutes / EXPECTED_MINUTES[difficulty] > SLOW_RATIO:
-            cap = min(cap, Grade.HARD)  # a slow solve is still a solve, never AGAIN
+            cap = min(cap, Grade.hard)  # a slow solve is still a solve, never "again"
 
     return Grade(min(self_rating, cap))
 
@@ -131,7 +114,7 @@ def review(
     rung: int,
     difficulty: Difficulty,
     self_rating: Grade,
-    hint: Hint = Hint.NONE,
+    hint: Hint = Hint.none,
     minutes: float | None = None,
     today: date | None = None,
     spread: float | None = None,

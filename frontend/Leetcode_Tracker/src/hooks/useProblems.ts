@@ -7,12 +7,18 @@
 // rather than replacing them, except on a reset (kind change or reloadToken bump),
 // which starts over from page one.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getDueToday, listProblems } from "../api/problems";
+import { getDueToday, listClosed, listProblems } from "../api/problems";
 import { ApiError } from "../api/client";
 import { useApp } from "../app/appContext";
 import type { Problem } from "../types";
 
-type Kind = "all" | "today";
+type Kind = "all" | "today" | "closed";
+
+const FETCHERS = {
+  all: listProblems,
+  today: getDueToday,
+  closed: listClosed,
+} as const;
 
 interface State {
   status: "loading" | "ready" | "error";
@@ -47,7 +53,7 @@ export function useProblems(kind: Kind): UseProblems {
   const loadingRef = useRef(false); // a request is in flight — dedupes overlapping loadMore()/observer fires
   const genRef = useRef(0); // bumps on every reset; late responses from an older gen are dropped
 
-  const fetchPage = kind === "today" ? getDueToday : listProblems;
+  const fetchPage = FETCHERS[kind];
 
   // Reset + load page one whenever the list identity changes (kind) or something
   // was created/edited/deleted (reloadToken).

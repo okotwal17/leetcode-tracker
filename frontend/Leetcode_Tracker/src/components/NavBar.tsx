@@ -23,6 +23,9 @@ export default function NavBar() {
           <NavLink to="/problems" className="nav-link">
             All Problems
           </NavLink>
+          <NavLink to="/retired" className="nav-link">
+            Retired
+          </NavLink>
         </nav>
 
         <button type="button" className="btn btn--primary add-btn" onClick={openAdd}>

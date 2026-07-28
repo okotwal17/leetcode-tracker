@@ -8,6 +8,7 @@ import NavBar from "./NavBar";
 import Modal from "./Modal";
 import ProblemDetail from "./ProblemDetail";
 import ProblemForm from "./ProblemForm";
+import ReviewModal from "./ReviewModal";
 import DeleteDialog from "./DeleteDialog";
 import { AppContext, type AppContextValue } from "../app/appContext";
 import type { Problem } from "../types";
@@ -18,7 +19,8 @@ type ModalState =
   | { type: "none" }
   | { type: "detail"; problem: Problem }
   | { type: "add" }
-  | { type: "edit"; problem: Problem };
+  | { type: "edit"; problem: Problem }
+  | { type: "review"; problem: Problem };
 
 // The delete dialog is tracked separately from `modal` because it can appear
 // *on top of* one (confirming a delete from inside the detail card). It holds
@@ -57,6 +59,7 @@ export default function Layout() {
       openDetail: (problem) => setModal({ type: "detail", problem }),
       openAdd: () => setModal({ type: "add" }),
       openEdit: (problem) => setModal({ type: "edit", problem }),
+      openReview: (problem) => setModal({ type: "review", problem }),
       confirmDelete,
     }),
     [reloadToken, confirmDelete],
@@ -84,6 +87,12 @@ export default function Layout() {
       {modal.type === "edit" && (
         <Modal onClose={closeModal} labelledBy="problem-form-title">
           <ProblemForm problem={modal.problem} onClose={closeModal} />
+        </Modal>
+      )}
+
+      {modal.type === "review" && (
+        <Modal onClose={closeModal} labelledBy="review-modal-title">
+          <ReviewModal problem={modal.problem} onClose={closeModal} />
         </Modal>
       )}
 

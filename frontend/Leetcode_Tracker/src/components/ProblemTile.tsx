@@ -1,12 +1,12 @@
-// One row in a list of problems (used on both the Feed and All Problems pages).
-// The whole tile is clickable to open the detail card; the delete button sits on
-// top and stops the click from bubbling so deleting never also opens the card.
+// One row in a list of problems (used on the Feed, All Problems and Closed pages).
+// The whole tile is clickable to open the detail card; the Review and Delete buttons
+// sit on top and stop the click from bubbling so neither also opens the card.
 import DifficultyBadge from "./DifficultyBadge";
-import { TrashIcon, CheckIcon, CalendarIcon } from "./icons";
+import { TrashIcon, CalendarIcon, RepeatIcon } from "./icons";
 import { useApp } from "../app/appContext";
 import { useDeleteProblem } from "../hooks/useDeleteProblem";
 import { formatDate, relativeDueLabel, todayISO } from "../utils/date";
-import type { Problem } from "../types";
+import { RUNG_COUNT, type Problem } from "../types";
 
 interface Props {
   problem: Problem;
@@ -16,17 +16,18 @@ interface Props {
 }
 
 export default function ProblemTile({ problem, showRelativeDue }: Props) {
-  const { openDetail } = useApp();
+  const { openDetail, openReview } = useApp();
   const remove = useDeleteProblem();
 
   const due = showRelativeDue
     ? relativeDueLabel(problem.repeat_on)
     : formatDate(problem.repeat_on);
   const overdue = problem.repeat_on !== null && problem.repeat_on < todayISO();
+  const closed = problem.state === "closed";
 
   return (
     <div
-      className="tile"
+      className={`tile ${closed ? "tile--closed" : ""}`}
       role="button"
       tabIndex={0}
       onClick={() => openDetail(problem)}
@@ -51,13 +52,39 @@ export default function ProblemTile({ problem, showRelativeDue }: Props) {
       </div>
 
       <div className="tile-side">
+        {/* A never-reviewed problem has no position on the ladder yet, so it reads as
+            "New" rather than showing a misleading rung 1. */}
         <span
-          className={`status-dot ${problem.passed ? "is-passed" : "is-failed"}`}
-          title={problem.passed ? "Passed" : "Not passed yet"}
+          className={`rung-pill ${closed ? "is-closed" : ""}`}
+          title={
+            closed
+              ? "Retired — never appears in the feed"
+              : problem.review_count === 0
+                ? "Not reviewed yet"
+                : `Reviewed ${problem.review_count} time${problem.review_count === 1 ? "" : "s"}`
+          }
         >
-          {problem.passed ? <CheckIcon width={14} height={14} /> : null}
-          {problem.passed ? "Passed" : "Unsolved"}
+          {closed
+            ? "Retired"
+            : problem.review_count === 0
+              ? "New"
+              : `Rung ${problem.rung + 1}/${RUNG_COUNT}`}
         </span>
+
+        {!closed && (
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            aria-label={`Review ${problem.title}`}
+            title="Review"
+            onClick={(e) => {
+              e.stopPropagation(); // don't open the detail card
+              openReview(problem);
+            }}
+          >
+            <RepeatIcon />
+          </button>
+        )}
 
         <button
           type="button"
