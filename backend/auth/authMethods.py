@@ -4,7 +4,6 @@ import asyncio
 from datetime import datetime, timezone
 
 import jwt
-from bson import ObjectId
 from fastapi import HTTPException, status
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
@@ -92,8 +91,3 @@ def decode_session_token(token: str) -> str:
     return claims["sub"]
 
 
-async def get_user_by_id(user_id: str) -> dict | None:
-    """Load the user a validated token points at."""
-    if not ObjectId.is_valid(user_id):
-        return None
-    return await users.find_one({"_id": ObjectId(user_id)})

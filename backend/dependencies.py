@@ -1,8 +1,9 @@
 from bson import ObjectId
 from fastapi import HTTPException, Request, status
 
-from auth.authMethods import decode_session_token, get_user_by_id
+from auth.authMethods import decode_session_token
 from auth.authSession import read_session_cookie
+from database import users
 
 
 async def current_user(request: Request) -> dict:
@@ -13,11 +14,11 @@ async def current_user(request: Request) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
 
-    user_id = decode_session_token(token)
+    user_id = valid_id(decode_session_token(token))
 
     # Re-read the user every request so a deleted account stops working immediately
     # rather than lingering until the token expires. Costs one indexed _id lookup.
-    user = await get_user_by_id(user_id)
+    user = await users.find_one({"_id": ObjectId(user_id)})
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -31,7 +32,7 @@ def valid_id(id: str) -> str:
     A garbage id is a bad request (422), not a missing resource (404).
     """
     if not ObjectId.is_valid(id):
-        raise HTTPException(status_code=422, detail="Invalid problem id")
+        raise HTTPException(status_code=422, detail="Invalid id")
     return id
 
 
