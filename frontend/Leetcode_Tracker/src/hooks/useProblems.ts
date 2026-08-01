@@ -1,11 +1,6 @@
-// Data-fetching hook shared by both list pages. It reads `reloadToken` from the
-// app context itself, so a page just calls `useProblems("today")` and gets fresh
-// data automatically whenever something is created/edited/deleted anywhere.
-//
-// This hook is cursor-paginated: the first page loads on mount, and `loadMore()`
-// appends the next page. It accumulates rows across pages (infinite scroll)
-// rather than replacing them, except on a reset (kind change or reloadToken bump),
-// which starts over from page one.
+// Cursor-paginated fetch shared by the list pages. Reads `reloadToken` from app
+// context, so any create/edit/delete anywhere refreshes the list. `loadMore()`
+// appends; a reset (kind, search, or reloadToken change) starts over at page one.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDueToday, listClosed, listProblems } from "../api/problems";
 import { ApiError } from "../api/client";
@@ -38,7 +33,7 @@ function messageFor(err: unknown): string {
   return err instanceof ApiError ? err.message : "Something went wrong.";
 }
 
-export function useProblems(kind: Kind): UseProblems {
+export function useProblems(kind: Kind, q = ""): UseProblems {
   const { reloadToken } = useApp();
   const [state, setState] = useState<State>({
     status: "loading",
@@ -55,15 +50,15 @@ export function useProblems(kind: Kind): UseProblems {
 
   const fetchPage = FETCHERS[kind];
 
-  // Reset + load page one whenever the list identity changes (kind) or something
-  // was created/edited/deleted (reloadToken).
+  // Reset + load page one whenever the list identity changes (kind), the search
+  // narrows (q), or something was created/edited/deleted (reloadToken).
   useEffect(() => {
     const gen = ++genRef.current;
     cursorRef.current = null;
     loadingRef.current = true;
     setState({ status: "loading", data: [], error: null, hasMore: false, loadingMore: false });
 
-    fetchPage({ limit: PAGE_SIZE })
+    fetchPage({ limit: PAGE_SIZE, q })
       .then((page) => {
         if (gen !== genRef.current) return; // a newer reset superseded this fetch
         cursorRef.current = page.next_cursor;
@@ -84,7 +79,7 @@ export function useProblems(kind: Kind): UseProblems {
       });
     // fetchPage is derived from kind (a stable import per kind), so kind covers it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, reloadToken]);
+  }, [kind, reloadToken, q]);
 
   const loadMore = useCallback(() => {
     // No-op if a request is already running or there's no next page.
@@ -93,7 +88,8 @@ export function useProblems(kind: Kind): UseProblems {
     loadingRef.current = true;
     setState((s) => ({ ...s, loadingMore: true }));
 
-    fetchPage({ limit: PAGE_SIZE, cursor: cursorRef.current })
+    // q rides along: without it page 2 would silently drop the filter.
+    fetchPage({ limit: PAGE_SIZE, cursor: cursorRef.current, q })
       .then((page) => {
         if (gen !== genRef.current) return; // a reset happened mid-flight — discard these rows
         cursorRef.current = page.next_cursor;
@@ -112,7 +108,7 @@ export function useProblems(kind: Kind): UseProblems {
       .finally(() => {
         if (gen === genRef.current) loadingRef.current = false;
       });
-  }, [fetchPage]);
+  }, [fetchPage, q]);
 
   return { ...state, loadMore };
 }

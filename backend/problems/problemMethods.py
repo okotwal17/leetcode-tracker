@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from problems import scheduler
@@ -54,21 +55,27 @@ async def _page(query: dict, limit: int) -> ProblemPage:
     )
 
 
+def _titleMatch(q: str | None) -> dict:
+    """Case-insensitive substring match on title. Escaped: user input is never a pattern."""
+    q = (q or "").strip()
+    return {"title": {"$regex": re.escape(q), "$options": "i"}} if q else {}
+
+
 async def listProblems(
-    user_id: ObjectId, limit: int = 20, cursor: str | None = None
+    user_id: ObjectId, limit: int = 20, cursor: str | None = None, q: str | None = None
 ) -> ProblemPage:
-    """One page of this user's archive, newest first."""
-    query: dict = {"user_id": user_id}
+    """One page of this user's archive, newest first, optionally filtered by title."""
+    query: dict = {"user_id": user_id} | _titleMatch(q)
     if cursor:
         query["_id"] = {"$lt": ObjectId(cursor)}
     return await _page(query, limit)
 
 
 async def listClosed(
-    user_id: ObjectId, limit: int = 20, cursor: str | None = None
+    user_id: ObjectId, limit: int = 20, cursor: str | None = None, q: str | None = None
 ) -> ProblemPage:
-    """One page of the problems this user has retired."""
-    query: dict = {"user_id": user_id, "state": ProblemState.closed.value}
+    """One page of the problems this user has retired, optionally filtered by title."""
+    query: dict = {"user_id": user_id, "state": ProblemState.closed.value} | _titleMatch(q)
     if cursor:
         query["_id"] = {"$lt": ObjectId(cursor)}
     return await _page(query, limit)

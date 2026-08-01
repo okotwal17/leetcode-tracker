@@ -1,13 +1,13 @@
-// The full archive of logged problems (GET /problems), with a search bar. The
-// search input is intentionally non-functional for now — it's here as the
-// placeholder for the filtering we'll wire up next. Keeping it visible lets us
-// design the layout around it up front.
+import { useState } from "react";
 import ProblemList from "../components/ProblemList";
-import { SearchIcon } from "../components/icons";
+import SearchBar from "../components/SearchBar";
+import { useDebounced } from "../hooks/useDebounced";
 import { useProblems } from "../hooks/useProblems";
 
 export default function AllProblemsPage() {
-  const { status, data, error, hasMore, loadingMore, loadMore } = useProblems("all");
+  const [query, setQuery] = useState("");
+  const search = useDebounced(query).trim();
+  const { status, data, error, hasMore, loadingMore, loadMore } = useProblems("all", search);
 
   return (
     <section>
@@ -19,21 +19,12 @@ export default function AllProblemsPage() {
         {status === "ready" && data.length > 0 && (
           <span className="count-pill">
             {data.length}
-            {hasMore ? "+" : ""} loaded
+            {hasMore ? "+" : ""} {search ? "found" : "loaded"}
           </span>
         )}
       </div>
 
-      {/* Non-functional for now — search wiring comes later. */}
-      <div className="search">
-        <SearchIcon />
-        <input
-          className="search-input"
-          type="search"
-          placeholder="Search problems…"
-          aria-label="Search problems"
-        />
-      </div>
+      <SearchBar value={query} onChange={setQuery} />
 
       <ProblemList
         status={status}
@@ -42,8 +33,12 @@ export default function AllProblemsPage() {
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={loadMore}
-        emptyTitle="No problems yet"
-        emptyHint="Hit Add in the top bar to log your first problem."
+        emptyTitle={search ? `No problems match “${search}”` : "No problems yet"}
+        emptyHint={
+          search
+            ? "Titles only — try a shorter piece of the name."
+            : "Hit Add in the top bar to log your first problem."
+        }
       />
     </section>
   );

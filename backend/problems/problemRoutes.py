@@ -26,10 +26,11 @@ async def create_problem(
 @problemRouter.get("", response_model=ProblemPage)
 async def list_problems(
     limit: int = Query(20, ge=1, le=100),
+    q: str | None = Query(None, max_length=100),
     cursor: str | None = Depends(valid_cursor),
     user: dict = Depends(current_user),
 ):
-    return await problemMethods.listProblems(user["_id"], limit=limit, cursor=cursor)
+    return await problemMethods.listProblems(user["_id"], limit=limit, cursor=cursor, q=q)
 
 
 @problemRouter.get("/today", response_model=ProblemPage)
@@ -46,10 +47,11 @@ async def problems_due_today(
 @problemRouter.get("/closed", response_model=ProblemPage)
 async def list_closed_problems(
     limit: int = Query(20, ge=1, le=100),
+    q: str | None = Query(None, max_length=100),
     cursor: str | None = Depends(valid_cursor),
     user: dict = Depends(current_user),
 ):
-    return await problemMethods.listClosed(user["_id"], limit=limit, cursor=cursor)
+    return await problemMethods.listClosed(user["_id"], limit=limit, cursor=cursor, q=q)
 
 
 @problemRouter.get("/{id}", response_model=LeetcodeRead)

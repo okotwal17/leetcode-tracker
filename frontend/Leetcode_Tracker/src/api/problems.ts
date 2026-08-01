@@ -10,18 +10,19 @@ import type {
   ReviewSubmit,
 } from "../types";
 
-// Cursor + page size for the paginated list endpoints. `cursor` is the opaque
-// token from the previous page's `next_cursor`; omit it for the first page.
+// `cursor` is the opaque token from the previous page's `next_cursor`; omit it
+// for the first page. `q` filters by title substring.
 export interface PageParams {
   cursor?: string | null;
   limit?: number;
+  q?: string;
 }
 
-// Build "?limit=…&cursor=…", including only the params that are actually set.
-function pageQuery({ cursor, limit }: PageParams = {}): string {
+function pageQuery({ cursor, limit, q }: PageParams = {}): string {
   const params = new URLSearchParams();
   if (limit != null) params.set("limit", String(limit));
   if (cursor) params.set("cursor", cursor);
+  if (q) params.set("q", q);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
