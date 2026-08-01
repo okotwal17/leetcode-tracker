@@ -5,10 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymongo.errors import ConnectionFailure
 
+from slowapi.errors import RateLimitExceeded
+
 from auth.authRoutes import authRouter
 from database import client
 from indexes import ensure_indexes
 from problems.problemRoutes import problemRouter
+from rateLimit import GlobalRateLimitMiddleware, limiter, rate_limit_handler
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +22,11 @@ async def lifespan(app: FastAPI):
     await client.close()       # shutdown below it
 
 app = FastAPI(title="Leetcode Tracker", version="1.0", lifespan=lifespan)
+
+# slowapi reads the limiter off app.state rather than from a closure, so this
+# assignment is load-bearing: without it every request raises AttributeError.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 
 @app.exception_handler(ConnectionFailure)
@@ -31,6 +39,9 @@ async def db_unavailable(request: Request, exc: ConnectionFailure):
         status_code=503,
         content={"detail": "Database temporarily unavailable, please retry."},
     )
+
+# Applies the global limits to every route, before routing
+app.add_middleware(GlobalRateLimitMiddleware)
 
 # Origins the browser is allowed to call this API from. The Vite dev server can be
 # reached at either host, and the browser treats them as *distinct* origins, so we
@@ -46,6 +57,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Retry-After"],
 )
 
 app.include_router(authRouter)

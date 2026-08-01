@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import AuthProvider from "./auth/AuthProvider";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RateLimitNotice from "./components/RateLimitNotice";
 import FeedPage from "./pages/FeedPage";
 import AllProblemsPage from "./pages/AllProblemsPage";
 import ClosedProblemsPage from "./pages/ClosedProblemsPage";
@@ -24,6 +25,8 @@ export default function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <AuthProvider>
+          {/* Outside <Routes> so a 429 on the login page shows it too. */}
+          <RateLimitNotice />
           <Routes>
             {/* Outside the guard, or signing in would redirect to itself. */}
             <Route path="/login" element={<LoginPage />} />
