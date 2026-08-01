@@ -10,6 +10,7 @@ import {
   DIFFICULTIES,
   NOTES_MAX_LENGTH,
   TITLE_MAX_LENGTH,
+  URL_MAX_LENGTH,
   type Difficulty,
   type Problem,
   type ProblemCreate,
@@ -18,6 +19,19 @@ import {
 interface Props {
   problem?: Problem; // absent => "add" mode, present => "edit" mode
   onClose: () => void;
+}
+
+// Mirrors what the backend's HttpUrl accepts. Without this the API's 422 comes back
+// as a field-error list the client wrapper can't read, and the user just sees
+// "Unprocessable Entity" — so the same rule is checked here to say something useful.
+function isHttpUrl(value: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false; // no scheme, or not a URL at all
+  }
+  return parsed.protocol === "http:" || parsed.protocol === "https:";
 }
 
 export default function ProblemForm({ problem, onClose }: Props) {
@@ -31,6 +45,7 @@ export default function ProblemForm({ problem, onClose }: Props) {
   );
   const [repeatOn, setRepeatOn] = useState(problem?.repeat_on ?? "");
   const [notes, setNotes] = useState(problem?.notes ?? "");
+  const [url, setUrl] = useState(problem?.url ?? "");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,14 +60,21 @@ export default function ProblemForm({ problem, onClose }: Props) {
       return;
     }
 
-    // Empty date / notes become null so the backend stores "unset" rather than "".
-    // `passed` isn't here any more: a review sets it, so sending it from the form
-    // would let the user contradict their own history.
+    const cleanUrl = url.trim();
+    if (cleanUrl !== "" && !isHttpUrl(cleanUrl)) {
+      setError("That link doesn't look right — it should start with https://");
+      return;
+    }
+
+    // Empty date / notes / link become null so the backend stores "unset" rather
+    // than "". `passed` isn't here any more: a review sets it, so sending it from
+    // the form would let the user contradict their own history.
     const payload: ProblemCreate = {
       title: cleanTitle,
       difficulty,
       repeat_on: repeatOn === "" ? null : repeatOn,
       notes: notes.trim() === "" ? null : notes.trim(),
+      url: cleanUrl === "" ? null : cleanUrl,
     };
 
     setSubmitting(true);
@@ -89,6 +111,19 @@ export default function ProblemForm({ problem, onClose }: Props) {
           placeholder="e.g. Two Sum"
           autoFocus
           onChange={(e) => setTitle(e.target.value)}
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Link (optional)</span>
+        <input
+          className="input"
+          type="text"
+          inputMode="url"
+          value={url}
+          maxLength={URL_MAX_LENGTH}
+          placeholder="https://leetcode.com/problems/two-sum/"
+          onChange={(e) => setUrl(e.target.value)}
         />
       </label>
 

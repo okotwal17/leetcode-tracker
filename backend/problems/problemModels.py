@@ -2,7 +2,7 @@ from datetime import date
 from enum import Enum, IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, Field, HttpUrl
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
@@ -35,6 +35,7 @@ class LeetcodeAdd(BaseModel):
     repeat_on: date | None = None
     passed: bool = False
     notes: str | None = Field(default=None, max_length=300)
+    url: HttpUrl | None = None
 
 class LeetcodeEdit(BaseModel):
     title: str = Field(default=None, min_length=1, max_length=200)
@@ -42,6 +43,7 @@ class LeetcodeEdit(BaseModel):
     passed: bool = None
     repeat_on: date | None = None
     notes: str | None = Field(default=None, max_length=300)
+    url: HttpUrl | None = None
 
 class LeetcodeRead(BaseModel):
     id: PyObjectId = Field(validation_alias="_id")
@@ -50,6 +52,7 @@ class LeetcodeRead(BaseModel):
     repeat_on: date | None = None
     passed: bool = False
     notes: str | None = Field(default=None, max_length=300)
+    url: str | None = None
     rung: int = 0
     review_count: int = 0
     last_reviewed: date | None = None

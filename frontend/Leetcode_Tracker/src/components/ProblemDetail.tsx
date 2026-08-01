@@ -4,7 +4,15 @@
 // attempt; Retire takes it off the ladder for good (and back on, from the Retired page).
 import { useState } from "react";
 import DifficultyBadge from "./DifficultyBadge";
-import { PencilIcon, TrashIcon, CheckIcon, XIcon, RepeatIcon, ArchiveIcon } from "./icons";
+import {
+  PencilIcon,
+  TrashIcon,
+  CheckIcon,
+  XIcon,
+  RepeatIcon,
+  ArchiveIcon,
+  ExternalLinkIcon,
+} from "./icons";
 import { useApp } from "../app/appContext";
 import { useDeleteProblem } from "../hooks/useDeleteProblem";
 import { closeProblem, reopenProblem } from "../api/problems";
@@ -15,6 +23,15 @@ import { RUNG_COUNT, type Problem } from "../types";
 interface Props {
   problem: Problem;
   onClose: () => void; // close the whole modal (used after a delete)
+}
+
+/** The domain a link actually points at, or the raw string if it won't parse. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
 }
 
 export default function ProblemDetail({ problem, onClose }: Props) {
@@ -61,6 +78,26 @@ export default function ProblemDetail({ problem, onClose }: Props) {
       </header>
 
       <dl className="detail-fields">
+        {problem.url && (
+          <div className="detail-field">
+            <dt>Link</dt>
+            <dd>
+              {/* Shows the host rather than the full URL: it keeps the row from
+                  blowing out, and a URL's userinfo ("https://leetcode.com@evil.com")
+                  makes the raw string a bad thing to read a destination off of. */}
+              <a
+                className="detail-link"
+                href={problem.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={problem.url}
+              >
+                {hostOf(problem.url)}
+                <ExternalLinkIcon width={13} height={13} />
+              </a>
+            </dd>
+          </div>
+        )}
         <div className="detail-field">
           <dt>Next review</dt>
           <dd>{formatDate(problem.repeat_on) ?? "Not scheduled"}</dd>

@@ -699,6 +699,29 @@ button {
   font-size: 14.5px;
 }
 
+/* min-width: 0 lets the ellipsis actually kick in — a flex item won't shrink
+   below its content width without it, so a long host would stretch the row. */
+.detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 320px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.detail-link:hover {
+  text-decoration: underline;
+}
+
+.detail-link svg {
+  flex-shrink: 0;
+}
+
 /* Notes area — real notes, or a faded centered nudge when empty. */
 .notes-label {
   margin: 20px 0 8px;

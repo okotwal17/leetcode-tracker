@@ -36,6 +36,9 @@ export interface Problem {
   repeat_on: string | null;
   passed: boolean;
   notes: string | null;
+  // Link to the problem itself, null when the user didn't paste one. Always http(s):
+  // the backend rejects any other scheme, which is what makes it safe as an href.
+  url: string | null;
   // Scheduling state. `rung` is 0-5; `review_count` of 0 means it has never been
   // reviewed, which is how the feed tells "due again" apart from "never finished".
   rung: number;
@@ -78,6 +81,7 @@ export interface ProblemCreate {
   difficulty: Difficulty;
   repeat_on: string | null;
   notes: string | null;
+  url: string | null;
 }
 
 // Payload for editing (LeetcodeEdit). Every field is optional: a PATCH only sends
@@ -86,3 +90,5 @@ export type ProblemUpdate = Partial<ProblemCreate>;
 
 export const NOTES_MAX_LENGTH = 300;
 export const TITLE_MAX_LENGTH = 200;
+// Matches pydantic's HttpUrl ceiling, so the input can't accept what the API rejects.
+export const URL_MAX_LENGTH = 2083;
