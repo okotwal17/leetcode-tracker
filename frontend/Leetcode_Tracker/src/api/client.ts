@@ -2,6 +2,11 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+// The browser's IANA zone ("Asia/Kolkata"), sent on every request so the server
+// can resolve "today" where the *user* is standing rather than where it is.
+// Read once: a tab that outlives a timezone change is not worth the complexity.
+const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 export class ApiError extends Error {
   status: number;
   // Seconds to wait, from the Retry-After header on a 429. Undefined otherwise.
@@ -37,6 +42,37 @@ export function setRateLimitedHandler(handler: RateLimitedHandler | null) {
   onRateLimited = handler;
 }
 
+// One entry in FastAPI's 422 body: `loc` is the path to the offending field
+// (["body", "minutes"]), `msg` the human-readable reason.
+interface ValidationError {
+  loc?: unknown[];
+  msg?: string;
+}
+
+/** Pull a readable message out of either error shape FastAPI emits. */
+function messageFrom(body: unknown, fallback: string): string {
+  const detail = (body as { detail?: unknown } | null)?.detail;
+
+  // HTTPException(detail="...") — every error we raise by hand.
+  if (typeof detail === "string") return detail;
+
+  // Request validation (422) sends a *list* of per-field errors instead. Naming
+  // the field matters: "Input should be greater than or equal to 0" is useless
+  // on a form with five inputs.
+  if (Array.isArray(detail)) {
+    const parts = (detail as ValidationError[])
+      .filter((e) => typeof e?.msg === "string")
+      .map((e) => {
+        // Drop the "body"/"query" prefix and keep the leaf name.
+        const field = e.loc?.filter((p) => p !== "body" && p !== "query").at(-1);
+        return typeof field === "string" ? `${field}: ${e.msg}` : e.msg!;
+      });
+    if (parts.length > 0) return parts.join("; ");
+  }
+
+  return fallback;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
@@ -44,7 +80,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       // Cross-origin fetches drop cookies unless asked, and the httpOnly session
       // cookie is the only thing identifying the user.
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Timezone": TIMEZONE },
       ...options,
     });
   } catch {
@@ -52,12 +88,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    let detail = res.statusText;
+    // statusText is empty over HTTP/2, which drops the reason phrase — so it can
+    // never be the last resort on its own.
+    const fallback = res.statusText || `Request failed (${res.status})`;
+    let detail = fallback;
     try {
-      const body = await res.json();
-      if (typeof body?.detail === "string") detail = body.detail;
+      detail = messageFrom(await res.json(), fallback);
     } catch {
-      /* non-JSON body — keep the status text */
+      /* non-JSON body — keep the fallback */
     }
 
     // /auth/* is excluded: those callers handle 401 themselves, and /auth/me

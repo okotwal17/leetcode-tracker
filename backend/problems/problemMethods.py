@@ -13,7 +13,7 @@ from problems.problemModels import (
     ReviewRead,
     ReviewSubmit,
 )
-from database import problems, reviews
+from database import problems
 from bson import ObjectId
 from pymongo import ReturnDocument
 
@@ -82,7 +82,7 @@ async def listClosed(
 
 
 async def editProblem(
-    user_id: ObjectId, id: str, data: LeetcodeEdit
+    user_id: ObjectId, id: str, data: LeetcodeEdit, today: date
 ) -> LeetcodeRead | None:
     """Updates one of this user's problems in DB"""
     updates = data.model_dump(mode="json", exclude_unset=True)
@@ -96,11 +96,15 @@ async def editProblem(
         current = await problems.find_one({"_id": ObjectId(id), "user_id": user_id})
         if current is None:
             return None
-        updates["rung"] = scheduler.rung_after_override(
-            current.get("rung", 0),
-            date.fromisoformat(updates["repeat_on"]),
-            date.today(),
-        )
+        # Only a *changed* date is a signal. A client that PATCHes the whole object
+        # resends the stored date untouched, and reading that as an override would
+        # demote the problem a rung every time the user edits an unrelated field.
+        if updates["repeat_on"] != current.get("repeat_on"):
+            updates["rung"] = scheduler.rung_after_override(
+                current.get("rung", 0),
+                date.fromisoformat(updates["repeat_on"]),
+                today,
+            )
 
     doc = await problems.find_one_and_update(
         {"_id": ObjectId(id), "user_id": user_id},
@@ -129,9 +133,9 @@ async def setState(
 
 
 async def submitReview(
-    user_id: ObjectId, id: str, data: ReviewSubmit
+    user_id: ObjectId, id: str, data: ReviewSubmit, today: date
 ) -> ReviewRead | None:
-    """Grade one attempt, move the problem along the ladder, and log the review."""
+    """Grade one attempt and move the problem along the ladder."""
     current = await problems.find_one({"_id": ObjectId(id), "user_id": user_id})
     if current is None:
         return None
@@ -143,9 +147,9 @@ async def submitReview(
         self_rating=data.self_rating,
         hint=data.hint,
         minutes=data.minutes,
+        today=today,
     )
 
-    today = date.today()
     doc = await problems.find_one_and_update(
         {"_id": ObjectId(id), "user_id": user_id},
         {
@@ -162,23 +166,6 @@ async def submitReview(
     if doc is None:
         return None
 
-    # Logged after the schedule is committed: if this insert fails we lose a row of
-    # history, which is recoverable, rather than logging a review that never happened.
-    await reviews.insert_one(
-        {
-            "user_id": user_id,
-            "problem_id": ObjectId(id),
-            "reviewed_on": today.isoformat(),
-            "self_rating": int(data.self_rating),
-            "hint": data.hint.value,
-            "minutes": data.minutes,
-            "grade": int(outcome.grade),
-            "rung_before": rung_before,
-            "rung_after": outcome.rung,
-            "due_on": outcome.due_on.isoformat(),
-        }
-    )
-
     return ReviewRead(
         problem=LeetcodeRead(**doc),
         grade=outcome.grade,
@@ -189,7 +176,7 @@ async def submitReview(
 
 
 async def dueToday(
-    user_id: ObjectId, limit: int = 20, cursor: str | None = None
+    user_id: ObjectId, today: date, limit: int = 20, cursor: str | None = None
 ) -> ProblemPage:
     """The daily feed: this user's active problems due today or overdue."""
     query: dict = {
@@ -197,7 +184,7 @@ async def dueToday(
         "state": ProblemState.active.value,
         "repeat_on": {
             "$ne": None,
-            "$lte": date.today().isoformat(),
+            "$lte": today.isoformat(),
         },
     }
     if cursor:

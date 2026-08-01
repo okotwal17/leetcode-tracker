@@ -1,4 +1,4 @@
-from database import problems, reviews, users
+from database import problems, users
 
 
 async def ensure_indexes() -> None:
@@ -26,6 +26,3 @@ async def ensure_indexes() -> None:
     # One Google account maps to exactly one user. unique=True is the DB-level
     # backstop in case two concurrent logins race past the upsert.
     await users.create_index("google_sub", unique=True)
-
-    # Review history for one problem, newest first — what a per-problem timeline needs.
-    await reviews.create_index([("user_id", 1), ("problem_id", 1), ("_id", -1)])

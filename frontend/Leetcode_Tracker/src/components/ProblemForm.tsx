@@ -14,6 +14,7 @@ import {
   type Difficulty,
   type Problem,
   type ProblemCreate,
+  type ProblemUpdate,
 } from "../types";
 
 interface Props {
@@ -81,7 +82,15 @@ export default function ProblemForm({ problem, onClose }: Props) {
     setError(null);
     try {
       if (isEdit) {
-        await updateProblem(problem.id, payload);
+        // PATCH means partial, so send only the fields that actually changed. Each
+        // input was seeded from `problem`, which makes this an apples-to-apples
+        // comparison against what the server already stores.
+        const changed = Object.fromEntries(
+          Object.entries(payload).filter(
+            ([key, value]) => value !== problem[key as keyof ProblemCreate],
+          ),
+        ) as ProblemUpdate;
+        await updateProblem(problem.id, changed);
       } else {
         await createProblem(payload);
       }

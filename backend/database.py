@@ -7,4 +7,3 @@ client = AsyncMongoClient(os.getenv("MONGODB_URL"))
 db = client["leetcode_tracker"]
 problems = db["problems"]
 users = db["users"]
-reviews = db["reviews"]

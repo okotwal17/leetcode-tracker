@@ -1,5 +1,8 @@
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
 from bson import ObjectId
-from fastapi import HTTPException, Request, status
+from fastapi import Header, HTTPException, Request, status
 
 from auth.authMethods import decode_session_token
 from auth.authSession import read_session_cookie
@@ -25,6 +28,18 @@ async def current_user(request: Request) -> dict:
             detail="Session is no longer valid. Please sign in again.",
         )
     return user
+
+
+def client_today(x_timezone: str | None = Header(default=None)) -> date:
+    """Today's date where the caller is standing; server-local if it won't say."""
+    # An unknown or malformed zone is not worth a 400: the caller still gets a
+    # coherent day, just the server's, which is exactly the old behaviour.
+    if x_timezone:
+        try:
+            return datetime.now(ZoneInfo(x_timezone)).date()
+        except (KeyError, ValueError):
+            pass
+    return date.today()
 
 
 def valid_id(id: str) -> str:

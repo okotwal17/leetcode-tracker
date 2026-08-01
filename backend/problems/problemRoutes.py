@@ -1,6 +1,8 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from dependencies import current_user, valid_id, valid_cursor
+from dependencies import client_today, current_user, valid_id, valid_cursor
 from .problemModels import (
     LeetcodeAdd,
     LeetcodeEdit,
@@ -38,8 +40,9 @@ async def problems_due_today(
     limit: int = Query(20, ge=1, le=100),
     cursor: str | None = Depends(valid_cursor),
     user: dict = Depends(current_user),
+    today: date = Depends(client_today),
 ):
-    return await problemMethods.dueToday(user["_id"], limit=limit, cursor=cursor)
+    return await problemMethods.dueToday(user["_id"], today, limit=limit, cursor=cursor)
 
 
 # Declared before "/{id}" so the literal path wins the match — otherwise FastAPI would
@@ -70,8 +73,9 @@ async def update_problem(
     data: LeetcodeEdit,
     id: str = Depends(valid_id),
     user: dict = Depends(current_user),
+    today: date = Depends(client_today),
 ):
-    problem = await problemMethods.editProblem(user["_id"], id, data)
+    problem = await problemMethods.editProblem(user["_id"], id, data, today)
     if problem is None:
         raise HTTPException(status_code=404, detail="Problem not found")
     return problem
@@ -91,9 +95,10 @@ async def review_problem(
     data: ReviewSubmit,
     id: str = Depends(valid_id),
     user: dict = Depends(current_user),
+    today: date = Depends(client_today),
 ):
     """Record one attempt: grades it, moves it along the ladder, returns the new date."""
-    result = await problemMethods.submitReview(user["_id"], id, data)
+    result = await problemMethods.submitReview(user["_id"], id, data, today)
     if result is None:
         raise HTTPException(status_code=404, detail="Problem not found")
     return result
