@@ -48,7 +48,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options,
     });
   } catch {
-    throw new ApiError(0, "Can't reach the server. Is the backend running?");
+    throw new ApiError(0, "Can't reach the server.");
   }
 
   if (!res.ok) {
