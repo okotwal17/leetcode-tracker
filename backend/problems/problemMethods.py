@@ -172,6 +172,7 @@ async def submitReview(
         rung_before=rung_before,
         rung_after=outcome.rung,
         due_on=outcome.due_on,
+        capped_by=outcome.capped_by,
     )
 
 

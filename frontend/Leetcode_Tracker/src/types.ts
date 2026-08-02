@@ -20,6 +20,10 @@ export type Grade = (typeof GRADE)[keyof typeof GRADE];
 // How much help the user needed. `solution` forces the grade to Again server-side.
 export type Hint = "none" | "nudge" | "solution";
 
+// Which signal held the grade below what the user claimed. The server works this
+// out and names it, so the client never re-derives it from the raw inputs.
+export type CapReason = "solution" | "nudge" | "slow";
+
 // A retired problem never appears in the feed but is still browsable.
 export type ProblemState = "active" | "closed";
 
@@ -63,6 +67,9 @@ export interface ReviewResult {
   rung_before: number;
   rung_after: number;
   due_on: string;
+  // Null unless a signal actually pulled the grade down — a cap that didn't bite
+  // (clicking Hard with a nudge) is not reported.
+  capped_by: CapReason | null;
 }
 
 // One page of a keyset-paginated list (backend ProblemPage). `items` is just

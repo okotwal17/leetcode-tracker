@@ -15,7 +15,7 @@ import { useApp } from "../app/appContext";
 import { useSubmitReview } from "../hooks/useSubmitReview";
 import { CheckIcon } from "./icons";
 import { formatDate, relativeDueLabel } from "../utils/date";
-import { GRADE, RUNG_COUNT, type Grade, type Hint, type Problem, type ReviewResult } from "../types";
+import { GRADE, RUNG_COUNT, type CapReason, type Grade, type Hint, type Problem, type ReviewResult } from "../types";
 
 interface Props {
   problem: Problem;
@@ -34,6 +34,12 @@ const HINT_OPTIONS: { value: Hint; label: string }[] = [
   { value: "nudge", label: "A nudge" },
   { value: "solution", label: "Read the solution" },
 ];
+
+const CAP_MESSAGE: Record<CapReason, string> = {
+  solution: "Reading the solution counts as a miss, whatever it felt like.",
+  nudge: "Needing a hint caps this at Hard, however it felt.",
+  slow: "That took long enough that it counts as a struggle.",
+};
 
 const GRADE_LABEL: Record<number, string> = {
   0: "Again",
@@ -57,8 +63,6 @@ export default function ReviewModal({ problem, onClose }: Props) {
 
   // Present once the review has been recorded — this is what flips us to phase 2.
   const [result, setResult] = useState<ReviewResult | null>(null);
-  // Kept so phase 2 can tell whether a cap downgraded what they actually clicked.
-  const [picked, setPicked] = useState<Grade | null>(null);
 
   // Phase 2: hand-overriding the date the ladder chose.
   const [editingDate, setEditingDate] = useState(false);
@@ -68,7 +72,6 @@ export default function ReviewModal({ problem, onClose }: Props) {
   async function handleGrade(self_rating: Grade) {
     if (submitting) return;
     setSubmitting(true);
-    setPicked(self_rating);
     setError(null);
 
     // An empty box means "not reporting it", which is different from zero minutes.
@@ -111,10 +114,6 @@ export default function ReviewModal({ problem, onClose }: Props) {
 
   // ---- phase 2: what the server decided --------------------------------------
   if (result) {
-    // The resolved grade can be worse than what they clicked, when a hint or a slow
-    // time capped it. Saying so is the whole point of showing it after the fact.
-    const downgraded = picked !== null && result.grade < picked;
-
     return (
       <div className="review">
         <h2 id="review-modal-title" className="form-title">
@@ -126,12 +125,8 @@ export default function ReviewModal({ problem, onClose }: Props) {
             <CheckIcon width={15} height={15} />
             Logged as {GRADE_LABEL[result.grade]}
           </span>
-          {downgraded && (
-            <p className="review-note">
-              {hint === "solution"
-                ? "Reading the solution counts as a miss, whatever it felt like."
-                : "That took long enough that it counts as a struggle."}
-            </p>
+          {result.capped_by && (
+            <p className="review-note">{CAP_MESSAGE[result.capped_by]}</p>
           )}
           <p className="review-rung">
             Rung {result.rung_after + 1} of {RUNG_COUNT}
@@ -142,6 +137,11 @@ export default function ReviewModal({ problem, onClose }: Props) {
                 {result.rung_before + 1})
               </span>
             )}
+          </p>
+          {/* Reviewing always schedules at least a day out, so the problem leaves
+              today's feed the moment this saves. Say so, or it reads as a bug. */}
+          <p className="review-note">
+            {"It'll pop back into your feed when it's time to review it again."}
           </p>
         </div>
 

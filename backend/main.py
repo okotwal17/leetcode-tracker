@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     yield
     await client.close()       # shutdown below it
 
-app = FastAPI(title="Leetcode Tracker", version="1.0", lifespan=lifespan)
+app = FastAPI(title="LeetCache", version="1.0", lifespan=lifespan)
 
 # slowapi reads the limiter off app.state rather than from a closure, so this
 # assignment is load-bearing: without it every request raises AttributeError.

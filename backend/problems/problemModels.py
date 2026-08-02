@@ -24,6 +24,12 @@ class Hint(str, Enum):
     nudge = "nudge"
     solution = "solution"
 
+class CapReason(str, Enum):
+    """Which signal held the grade below what the user claimed."""
+    solution = "solution"
+    nudge = "nudge"
+    slow = "slow"
+
 class ProblemState(str, Enum):
     """Closed problems are retired: never in the feed, still browsable."""
     active = "active"
@@ -71,6 +77,8 @@ class ReviewRead(BaseModel):
     rung_before: int
     rung_after: int
     due_on: date
+    # Null unless a signal actually pulled the grade below the self-rating.
+    capped_by: CapReason | None = None
 
 class ProblemPage(BaseModel):
     items: list[LeetcodeRead]

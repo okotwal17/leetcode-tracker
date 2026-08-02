@@ -11,7 +11,7 @@ from typing import NamedTuple
 
 # Grade and Hint live with the other wire-facing enums rather than here, so that
 # problemModels can build ReviewSubmit out of them without importing this module back.
-from problems.problemModels import Difficulty, Grade, Hint
+from problems.problemModels import CapReason, Difficulty, Grade, Hint
 
 # Rung n means "come back in RUNG_DAYS[n] days". Stored 0-indexed, shown to the
 # user as 1-6. Rung 5 is terminal.
@@ -58,6 +58,33 @@ class Outcome(NamedTuple):
     grade: Grade
     rung: int
     due_on: date
+    capped_by: CapReason | None = None
+
+
+def _cap(
+    hint: Hint = Hint.none,
+    minutes: float | None = None,
+    difficulty: Difficulty | None = None,
+) -> tuple[Grade, CapReason | None]:
+    """The ceiling the objective signals put on a grade, and which one set it."""
+    # Asymmetric on purpose: users inflate self-ratings and rarely deflate them, so
+    # evidence of struggle may veto optimism but evidence of speed may not override
+    # a self-reported struggle.
+    cap: Grade = Grade.easy
+    reason: CapReason | None = None
+
+    if hint is Hint.solution:
+        cap, reason = Grade.again, CapReason.solution  # reading it isn't solving it
+    elif hint is Hint.nudge:
+        cap, reason = Grade.hard, CapReason.nudge
+
+    if minutes is not None and difficulty is not None:
+        # `< cap` rather than min(): a slow solve is still a solve (never "again"),
+        # and on a tie the admitted hint is the more honest thing to report back.
+        if minutes / EXPECTED_MINUTES[difficulty] > SLOW_RATIO and Grade.hard < cap:
+            cap, reason = Grade.hard, CapReason.slow
+
+    return cap, reason
 
 
 def grade_from_signals(
@@ -67,20 +94,7 @@ def grade_from_signals(
     difficulty: Difficulty | None = None,
 ) -> Grade:
     """Fold objective signals into the self-rating. Signals cap it, never raise it."""
-    # Asymmetric on purpose: users inflate self-ratings and rarely deflate them, so
-    # evidence of struggle may veto optimism but evidence of speed may not override
-    # a self-reported struggle.
-    cap = Grade.easy
-
-    if hint is Hint.solution:
-        cap = Grade.again  # reading the solution isn't solving it
-    elif hint is Hint.nudge:
-        cap = min(cap, Grade.hard)
-
-    if minutes is not None and difficulty is not None:
-        if minutes / EXPECTED_MINUTES[difficulty] > SLOW_RATIO:
-            cap = min(cap, Grade.hard)  # a slow solve is still a solve, never "again"
-
+    cap, _ = _cap(hint, minutes, difficulty)
     return Grade(min(self_rating, cap))
 
 
@@ -120,6 +134,10 @@ def review(
     spread: float | None = None,
 ) -> Outcome:
     """One review, end to end: raw signals in, new schedule out."""
-    grade = grade_from_signals(self_rating, hint, minutes, difficulty)
+    cap, reason = _cap(hint, minutes, difficulty)
+    grade = Grade(min(self_rating, cap))
     moved = next_rung(rung, grade)
-    return Outcome(grade, moved, next_due(moved, today or date.today(), spread))
+    # A cap that didn't actually bite isn't worth reporting: claiming "Hard" with a
+    # nudge lands on Hard either way, and nothing was overridden.
+    capped_by = reason if grade < self_rating else None
+    return Outcome(grade, moved, next_due(moved, today or date.today(), spread), capped_by)

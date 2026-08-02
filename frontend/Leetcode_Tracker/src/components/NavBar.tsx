@@ -10,9 +10,9 @@ export default function NavBar() {
   return (
     <header className="nav">
       <div className="nav-inner">
-        <NavLink to="/" className="brand" aria-label="Leetcode Tracker home">
+        <NavLink to="/" className="brand" aria-label="LeetCache home">
           <span className="brand-mark">{"</>"}</span>
-          <span className="brand-name">Leetcode Tracker</span>
+          <span className="brand-name">LeetCache</span>
         </NavLink>
 
         <nav className="nav-links">

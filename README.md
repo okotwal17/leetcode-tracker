@@ -1,2 +1,3 @@
-# leetcode-tracker
-Track your leetcode and log in to see what leetcodes to do for the day. 
+# LeetCache
+A cache of the LeetCode problems you've solved. Log in to see which ones are due
+for review today, and let the ladder decide when each one comes back. 

@@ -14,7 +14,7 @@ export default function ClosedProblemsPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Retired</h1>
-          <p className="page-subtitle">Closed for good — open one to put it back.</p>
+          <p className="page-subtitle">Closed for good. Open one to put it back.</p>
         </div>
         {status === "ready" && data.length > 0 && (
           <span className="count-pill">

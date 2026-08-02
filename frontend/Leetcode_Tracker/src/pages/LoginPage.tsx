@@ -16,7 +16,7 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="auth-card">
         <span className="brand-mark">{"</>"}</span>
-        <h1 className="auth-title">Leetcode Tracker</h1>
+        <h1 className="auth-title">LeetCache</h1>
         <p className="auth-subtitle">
           Sign in to track your problems and daily reviews.
         </p>
