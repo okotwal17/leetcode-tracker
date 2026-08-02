@@ -1,0 +1,22 @@
+# The local virtualenv holds macOS binaries — copying it over the image's own
+# would break the interpreter in ways that only show up at runtime.
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+
+# Rebuilt inside the image; copying the host's would defeat the layer cache and
+# could ship a stale bundle.
+**/node_modules
+**/dist
+
+# Secrets are injected by Cloud Run at runtime, never baked into a layer. The
+# frontend's build-time values are passed as ENV/ARG in the Dockerfile instead.
+**/.env
+**/.env.*
+
+.git
+.gitignore
+.vscode
+**/.DS_Store
+backend/tests
