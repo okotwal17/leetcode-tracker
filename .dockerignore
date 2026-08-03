@@ -10,10 +10,14 @@
 **/node_modules
 **/dist
 
-# Secrets are injected by Cloud Run at runtime, never baked into a layer. The
-# frontend's build-time values are passed as ENV/ARG in the Dockerfile instead.
+# Secrets are injected by Cloud Run at runtime, never baked into a layer.
 **/.env
 **/.env.*
+
+# ...except the frontend's, which the Vite build needs. Safe to ship: Vite only
+# exposes VITE_* vars and inlines them into the browser bundle, so every value in
+# that file is public by construction. backend/.env stays excluded above.
+!frontend/Leetcode_Tracker/.env
 
 .git
 .gitignore

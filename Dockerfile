@@ -15,11 +15,8 @@ COPY frontend/Leetcode_Tracker/ ./
 # baked in and no CORS involved. Overrides the localhost value in .env.
 ENV VITE_API_URL=/api
 
-# Public by design — it identifies the app to Google from inside the browser — but
-# it must be present at BUILD time because Vite inlines it into the bundle. ARG
-# rather than ENV: build args reach RUN as env vars without persisting anywhere.
-ARG VITE_GOOGLE_CLIENT_ID
-
+# VITE_GOOGLE_CLIENT_ID comes from the committed frontend .env — no build arg, so
+# Cloud Build can build this straight from the repo with no extra configuration.
 RUN npm run build
 
 
