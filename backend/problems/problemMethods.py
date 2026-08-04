@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from problems import scheduler
 from problems.problemModels import (
@@ -30,7 +30,14 @@ NEW_SCHEDULING = {
 
 async def addProblem(user_id: ObjectId, data: LeetcodeAdd) -> LeetcodeRead:
     """Adds a new problem owned by this user"""
-    doc = data.model_dump(mode="json") | NEW_SCHEDULING | {"user_id": user_id}
+    fields = data.model_dump(mode="json")
+    fields["repeat_on"] = (
+        (data.repeat_on + timedelta(days=scheduler.RUNG_DAYS[0])).isoformat()
+        if data.repeat_on
+        else None
+    )
+
+    doc = fields | NEW_SCHEDULING | {"user_id": user_id}
     await problems.insert_one(doc)
     return LeetcodeRead(**doc)
 
@@ -82,7 +89,7 @@ async def listClosed(
 
 
 async def editProblem(
-    user_id: ObjectId, id: str, data: LeetcodeEdit, today: date
+    user_id: ObjectId, id: str, data: LeetcodeEdit
 ) -> LeetcodeRead | None:
     """Updates one of this user's problems in DB"""
     updates = data.model_dump(mode="json", exclude_unset=True)
@@ -100,10 +107,12 @@ async def editProblem(
         # resends the stored date untouched, and reading that as an override would
         # demote the problem a rung every time the user edits an unrelated field.
         if updates["repeat_on"] != current.get("repeat_on"):
+            # Stored as an ISO string, or None until the first review.
+            last_reviewed = current.get("last_reviewed")
             updates["rung"] = scheduler.rung_after_override(
                 current.get("rung", 0),
                 date.fromisoformat(updates["repeat_on"]),
-                today,
+                date.fromisoformat(last_reviewed) if last_reviewed else None,
             )
 
     doc = await problems.find_one_and_update(

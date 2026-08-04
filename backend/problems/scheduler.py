@@ -113,12 +113,12 @@ def next_due(rung: int, today: date, spread: float | None = None) -> date:
     return today + timedelta(days=max(1, days + offset))
 
 
-def rung_after_override(rung: int, manual_date: date, today: date) -> int:
+def rung_after_override(rung: int, manual_date: date, last_reviewed: date | None) -> int:
     """Adjust the rung when the user hand-picks a date, based on which way they moved it."""
-    # Compared against the *unfuzzed* ladder date: jitter is cosmetic, and comparing
-    # against it would make this rule depend on a coin flip the user never saw.
     rung = max(0, min(MAX_RUNG, rung))
-    ladder_date = today + timedelta(days=RUNG_DAYS[rung])
+    if last_reviewed is None:
+        return rung
+    ladder_date = last_reviewed + timedelta(days=RUNG_DAYS[rung])
     if manual_date < ladder_date:
         return max(0, rung - 1)  # "I need this sooner" -> they're weaker than we thought
     return rung  # pushed out or unchanged: deferral is not failure

@@ -6,6 +6,7 @@
 // with the `useApp()` hook. Keeping the context object and hook in a plain .ts
 // file (separate from the Provider component) keeps React Fast Refresh happy.
 import { createContext, useContext } from "react";
+import type { ToastVariant } from "../components/Toast";
 import type { Problem } from "../types";
 
 export interface AppContextValue {
@@ -22,6 +23,11 @@ export interface AppContextValue {
   // Opens the themed delete confirmation and resolves true/false with the choice,
   // so callers can `await confirmDelete(name)` exactly like the old window.confirm.
   confirmDelete: (itemName: string) => Promise<boolean>;
+
+  // Drops a message into the bottom-right stack. Success toasts fade on their own;
+  // "error" ones stay until dismissed. Prefer an inline message when the caller has
+  // its own UI on screen — this is for the ones that don't, like useDeleteProblem.
+  notify: (message: string, variant?: ToastVariant) => void;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);

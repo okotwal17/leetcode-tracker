@@ -2,7 +2,7 @@
 // reload token) and hands it to the rest of the tree through AppContext. Pages
 // render into <Outlet/>. Because the modals live here — above the router — any
 // page can open the same detail/add/edit dialog by calling a context action.
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import NavBar from "./NavBar";
 import Modal from "./Modal";
@@ -10,6 +10,8 @@ import ProblemDetail from "./ProblemDetail";
 import ProblemForm from "./ProblemForm";
 import ReviewModal from "./ReviewModal";
 import DeleteDialog from "./DeleteDialog";
+import AddedNotice from "./AddedNotice";
+import ToastStack, { type ToastItem, type ToastVariant } from "./Toast";
 import { AppContext, type AppContextValue } from "../app/appContext";
 import type { Problem } from "../types";
 
@@ -19,6 +21,7 @@ type ModalState =
   | { type: "none" }
   | { type: "detail"; problem: Problem }
   | { type: "add" }
+  | { type: "added"; problem: Problem } // "what now?" right after a create
   | { type: "edit"; problem: Problem }
   | { type: "review"; problem: Problem };
 
@@ -34,8 +37,24 @@ export default function Layout() {
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  // A ref, not state: bumping it must not trigger a render, and two toasts fired
+  // in the same tick still need distinct keys.
+  const nextToastId = useRef(0);
 
   const closeModal = useCallback(() => setModal({ type: "none" }), []);
+
+  const notify = useCallback(
+    (message: string, variant: ToastVariant = "success") => {
+      const id = (nextToastId.current += 1);
+      setToasts((list) => [...list, { id, message, variant }]);
+    },
+    [],
+  );
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((list) => list.filter((toast) => toast.id !== id));
+  }, []);
 
   // Turns an imperative "are you sure?" into a promise: opening the dialog stashes
   // the resolver, and answering it (below) settles the promise the caller awaits.
@@ -61,8 +80,9 @@ export default function Layout() {
       openEdit: (problem) => setModal({ type: "edit", problem }),
       openReview: (problem) => setModal({ type: "review", problem }),
       confirmDelete,
+      notify,
     }),
-    [reloadToken, confirmDelete],
+    [reloadToken, confirmDelete, notify],
   );
 
   return (
@@ -80,7 +100,17 @@ export default function Layout() {
 
       {modal.type === "add" && (
         <Modal onClose={closeModal} labelledBy="problem-form-title">
-          <ProblemForm onClose={closeModal} />
+          {/* Swaps itself for the "what now?" notice instead of just closing. */}
+          <ProblemForm
+            onClose={closeModal}
+            onCreated={(problem) => setModal({ type: "added", problem })}
+          />
+        </Modal>
+      )}
+
+      {modal.type === "added" && (
+        <Modal onClose={closeModal} labelledBy="added-notice-title">
+          <AddedNotice problem={modal.problem} onClose={closeModal} />
         </Modal>
       )}
 
@@ -104,6 +134,8 @@ export default function Layout() {
           onCancel={() => answerDelete(false)}
         />
       )}
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </AppContext.Provider>
   );
 }

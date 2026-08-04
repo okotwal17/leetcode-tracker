@@ -1314,3 +1314,132 @@ button {
     }
   }
 }
+
+/* --- toasts ---------------------------------------------------------------- */
+/* Bottom-RIGHT, deliberately clear of .rate-limit-notice (bottom-centre) so a
+   throttle banner and an action receipt can be on screen together without
+   overlapping. Lower z-index than the modal layer: a toast is a receipt for
+   something already finished, so it must never sit over a live dialog. */
+.toast-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+
+  /* The stack spans the viewport edge-to-edge for layout, but only the toasts
+     themselves should intercept clicks. */
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 10px 10px 10px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.toast--error {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: var(--surface);
+}
+
+/* A left rule rather than a fully tinted card: the message still has to be
+   readable, and danger-coloured body text on a danger-tinted panel is not. */
+.toast--error::before {
+  content: "";
+  align-self: stretch;
+  width: 3px;
+  margin: -10px 0 -10px -14px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--danger);
+}
+
+.toast--error .toast__text {
+  color: var(--text);
+}
+
+.toast__text {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.toast__dismiss {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast__dismiss:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in 160ms ease-out;
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* --- post-add notice ------------------------------------------------------- */
+
+.added-notice {
+  padding: 4px 2px;
+}
+
+.added-notice__title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.added-notice__body {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.added-notice__body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.added-notice__hint {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.added-notice__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}

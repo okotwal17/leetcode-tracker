@@ -21,7 +21,12 @@ problemRouter = APIRouter(prefix="/problems", tags=["problems"])
 async def create_problem(
     data: LeetcodeAdd,
     user: dict = Depends(current_user),
+    today: date = Depends(client_today),
 ):
+    if data.repeat_on and data.repeat_on > today:
+        raise HTTPException(
+            status_code=422, detail="You can't have first solved it in the future."
+        )
     return await problemMethods.addProblem(user["_id"], data)
 
 
@@ -73,9 +78,8 @@ async def update_problem(
     data: LeetcodeEdit,
     id: str = Depends(valid_id),
     user: dict = Depends(current_user),
-    today: date = Depends(client_today),
 ):
-    problem = await problemMethods.editProblem(user["_id"], id, data, today)
+    problem = await problemMethods.editProblem(user["_id"], id, data)
     if problem is None:
         raise HTTPException(status_code=404, detail="Problem not found")
     return problem

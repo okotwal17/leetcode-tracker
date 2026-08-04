@@ -92,7 +92,8 @@ export interface ProblemCreate {
 }
 
 // Payload for editing (LeetcodeEdit). Every field is optional: a PATCH only sends
-// what changed. Sending null on repeat_on/notes clears them on the backend.
+// what changed. Sending null on repeat_on/notes clears them on the backend. Note
+// that here `repeat_on` means the next review date, not the solve date.
 export type ProblemUpdate = Partial<ProblemCreate>;
 
 export const NOTES_MAX_LENGTH = 300;

@@ -6,6 +6,7 @@ import { createProblem, updateProblem } from "../api/problems";
 import { ApiError } from "../api/client";
 import { useApp } from "../app/appContext";
 import { ResetIcon } from "./icons";
+import { todayISO } from "../utils/date";
 import {
   DIFFICULTIES,
   NOTES_MAX_LENGTH,
@@ -20,6 +21,9 @@ import {
 interface Props {
   problem?: Problem; // absent => "add" mode, present => "edit" mode
   onClose: () => void;
+  // Add mode only. Called instead of onClose so the caller can put something else
+  // in this modal's place rather than dropping the user back on the list.
+  onCreated?: (problem: Problem) => void;
 }
 
 // Mirrors what the backend's HttpUrl accepts. Without this the API's 422 comes back
@@ -35,8 +39,8 @@ function isHttpUrl(value: string): boolean {
   return parsed.protocol === "http:" || parsed.protocol === "https:";
 }
 
-export default function ProblemForm({ problem, onClose }: Props) {
-  const { refresh } = useApp();
+export default function ProblemForm({ problem, onClose, onCreated }: Props) {
+  const { refresh, notify } = useApp();
   const isEdit = problem !== undefined;
 
   // Seed each field from the existing problem (edit) or a sensible blank (add).
@@ -91,11 +95,17 @@ export default function ProblemForm({ problem, onClose }: Props) {
           ),
         ) as ProblemUpdate;
         await updateProblem(problem.id, changed);
+        refresh(); // pull the updated row into every list
+        notify("Changes saved");
+        onClose();
       } else {
-        await createProblem(payload);
+        const created = await createProblem(payload);
+        refresh();
+        // No toast here: the notice that replaces this modal is the confirmation,
+        // and two receipts for one action is just noise.
+        if (onCreated) onCreated(created);
+        else onClose();
       }
-      refresh(); // pull the new/updated row into every list
-      onClose();
     } catch (err: unknown) {
       const message =
         err instanceof ApiError ? err.message : "Could not save. Try again.";
@@ -177,6 +187,7 @@ export default function ProblemForm({ problem, onClose }: Props) {
             type="date"
             value={repeatOn}
             onChange={(e) => setRepeatOn(e.target.value)}
+            max={isEdit ? undefined : todayISO()}
           />
         </div>
       </div>
